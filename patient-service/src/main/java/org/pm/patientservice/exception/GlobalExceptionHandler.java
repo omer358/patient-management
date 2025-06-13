@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+
 @ControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
@@ -29,5 +31,13 @@ public class GlobalExceptionHandler {
         Map<String, String> errors = new HashMap<>();
         errors.put("email", ex.getMessage());
         return ResponseEntity.badRequest().body(errors);
+    }
+
+    @ExceptionHandler(PatientNotFoundException.class)
+    public ResponseEntity<Map<String,String>> handlePatientNotFoundException(PatientNotFoundException ex) {
+        log.warn("Patient not found exception: {}", ex.getMessage());
+        Map<String, String> errors = new HashMap<>();
+        errors.put("patient", ex.getMessage());
+        return ResponseEntity.status(NOT_FOUND).body(errors);
     }
 }

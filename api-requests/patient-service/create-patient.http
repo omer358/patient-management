@@ -1,0 +1,12 @@
+### POST request to save a new patient
+POST http://localhost:4000/patients/add
+Content-Type: application/json
+
+{
+  "name": "Khalid Ahmed",
+  "email": "khalid@example.com",
+  "address":"123 main street",
+  "dateOfBirth": "1995-09-29",
+  "registeredDate":"2025-06-12"
+}
+###
