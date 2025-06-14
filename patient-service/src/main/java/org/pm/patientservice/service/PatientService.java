@@ -27,7 +27,9 @@ public class PatientService {
 
     public PatientResponseDto createPatient(PatientRequestDTO patientRequestDTO) {
         if (patientRepository.existsByEmail(patientRequestDTO.getEmail())) {
-            throw new EmailAlreadyExistsException("A patient with this email already exists " + patientRequestDTO.getEmail());
+            throw new EmailAlreadyExistsException(
+                    "A patient with this email already exists " + patientRequestDTO.getEmail()
+            );
         }
         Patient patient = patientMapper.toEntity(patientRequestDTO);
         Patient savedPatient = patientRepository.save(patient);
@@ -49,5 +51,9 @@ public class PatientService {
         patient.setDateOfBirth(LocalDate.parse(patientRequestDTO.getDateOfBirth()));
         Patient updatedPatient = patientRepository.save(patient);
         return patientMapper.toDto(updatedPatient);
+    }
+
+    public void deletePatient(UUID id) {
+        patientRepository.deleteById(id);
     }
 }
