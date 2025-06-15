@@ -17,7 +17,7 @@
           </list>
         </option>
         <option name="commandLineOptions" value="--network internal" />
-        <option name="sourceFilePath" value="Dockerfile" />
+        <option name="sourceFilePath" value="billing-service/Dockerfile" />
       </settings>
     </deployment>
     <method v="2" />
