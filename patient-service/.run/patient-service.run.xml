@@ -1,11 +1,19 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="patient-service" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
+  <configuration default="false" name="patient-service" type="docker-deploy" factoryName="dockerfile" folderName="micro-services deploy" server-name="Docker">
     <deployment type="dockerfile">
       <settings>
         <option name="imageTag" value="patient-service:latest" />
         <option name="containerName" value="patient-service" />
         <option name="envVars">
           <list>
+            <DockerEnvVarImpl>
+              <option name="name" value="BILLING_SERVICE_ADDRESS" />
+              <option name="value" value="billing-service" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="BILLING_SERVICE_GRPC_PORT" />
+              <option name="value" value="9001" />
+            </DockerEnvVarImpl>
             <DockerEnvVarImpl>
               <option name="name" value="SPRING_DATASOURCE_PASSWORD" />
               <option name="value" value="password" />
@@ -20,19 +28,11 @@
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
               <option name="name" value="SPRING_JPA_HIBERNATE_DDL_AUTO" />
-              <option name="value" value="update" />
+              <option name="value" value="create" />
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
               <option name="name" value="SPRING_SQL_INIT_MODE" />
               <option name="value" value="always" />
-            </DockerEnvVarImpl>
-            <DockerEnvVarImpl>
-              <option name="name" value="BILLING_SERVICE_ADDRESS" />
-              <option name="value" value="patient-service" />
-            </DockerEnvVarImpl>
-            <DockerEnvVarImpl>
-              <option name="name" value="BILLING_SERVICE_GRPC_PORT" />
-              <option name="value" value="9001" />
             </DockerEnvVarImpl>
           </list>
         </option>
