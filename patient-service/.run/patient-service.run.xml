@@ -31,21 +31,13 @@
               <option name="value" value="create" />
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
-              <option name="name" value="SPRING_SQL_INIT_MODE" />
-              <option name="value" value="always" />
-            </DockerEnvVarImpl>
-            <DockerEnvVarImpl>
               <option name="name" value="SPRING_KAFKA_BOOTSTRAP_SERVERS" />
               <option name="value" value="kafka:9092" />
             </DockerEnvVarImpl>
-          </list>
-        </option>
-        <option name="portBindings">
-          <list>
-            <DockerPortBindingImpl>
-              <option name="containerPort" value="4000" />
-              <option name="hostPort" value="4000" />
-            </DockerPortBindingImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="SPRING_SQL_INIT_MODE" />
+              <option name="value" value="always" />
+            </DockerEnvVarImpl>
           </list>
         </option>
         <option name="commandLineOptions" value="--network internal" />

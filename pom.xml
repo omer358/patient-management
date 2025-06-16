@@ -21,6 +21,8 @@
     <modules>
         <module>patient-service</module>
         <module>billing-service</module>
+        <module>analytices-service</module>
+        <module>api-gateway</module>
     </modules>
 
     <dependencyManagement>
