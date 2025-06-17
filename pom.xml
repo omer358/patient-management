@@ -23,6 +23,7 @@
         <module>billing-service</module>
         <module>analytices-service</module>
         <module>api-gateway</module>
+        <module>auth-service</module>
     </modules>
 
     <dependencyManagement>
