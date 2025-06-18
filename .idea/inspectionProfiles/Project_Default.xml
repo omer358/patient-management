@@ -11,6 +11,7 @@
           <option value="    &quot;registeredDate&quot;" />
           <option value="    &quot;address&quot;" />
           <option value="}" />
+          <option value="    &quot;password&quot;" />
         </set>
       </option>
     </inspection_tool>

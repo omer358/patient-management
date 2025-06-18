@@ -1,14 +1,15 @@
 package org.pm.authservice.service;
 
-import lombok.RequiredArgsConstructor;
+import io.jsonwebtoken.JwtException;
+import lombok.extern.slf4j.Slf4j;
 import org.pm.authservice.dto.LoginRequestDto;
-import org.pm.authservice.model.User;
 import org.pm.authservice.util.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class AuthService {
     private final UserService userService;
@@ -27,5 +28,15 @@ public class AuthService {
                         passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword()))
                 .map(u -> jwtUtl.generateToken(u.getEmail(),u.getRole()));
      return token;
+    }
+
+    public boolean validateToken(String token) {
+        try{
+            jwtUtl.validateToken(token);
+            return true;
+        }catch (JwtException e){
+            log.error("Invalid token: {}", e.getMessage());
+            return false;
+        }
     }
 }
