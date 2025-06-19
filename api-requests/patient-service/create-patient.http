@@ -1,10 +1,11 @@
 ### POST request to save a new patient
 POST http://localhost:4004/api/patients/add
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "name": "Osama Ahmed",
-  "email": "osama@example.com",
+  "email": "osama2@example.com",
   "address":"123 main street",
   "dateOfBirth": "1995-09-29",
   "registeredDate":"2025-06-12"
