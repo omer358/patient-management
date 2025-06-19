@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="patient-service" type="docker-deploy" factoryName="dockerfile" folderName="micro-services deploy" server-name="Docker">
+  <configuration default="false" name="patient-service" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
     <deployment type="dockerfile">
       <settings>
         <option name="imageTag" value="patient-service:latest" />
@@ -28,7 +28,7 @@
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
               <option name="name" value="SPRING_JPA_HIBERNATE_DDL_AUTO" />
-              <option name="value" value="create" />
+              <option name="value" value="update" />
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
               <option name="name" value="SPRING_KAFKA_BOOTSTRAP_SERVERS" />
