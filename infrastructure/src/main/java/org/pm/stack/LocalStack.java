@@ -3,14 +3,22 @@ package org.pm.stack;
 import software.amazon.awscdk.*;
 import software.amazon.awscdk.services.ec2.*;
 import software.amazon.awscdk.services.ec2.InstanceType;
+import software.amazon.awscdk.services.ecs.*;
+import software.amazon.awscdk.services.ecs.Protocol;
+import software.amazon.awscdk.services.logs.LogGroup;
+import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.msk.CfnCluster;
 import software.amazon.awscdk.services.rds.*;
 import software.amazon.awscdk.services.route53.CfnHealthCheck;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class LocalStack extends Stack {
     private final Vpc vpc;
+    private final Cluster ecsCluster;
 
     public LocalStack(final App scope, final String id, final StackProps props) {
         super(scope, id, props);
@@ -21,7 +29,48 @@ public class LocalStack extends Stack {
         CfnHealthCheck patientServiceDBHealthCheck = createDbHealthCheck(
                 patientServiceDB, "PatientServiceDBHealthCheck");
         CfnCluster mskCluster = createCluster();
+        this.ecsCluster = createEcsCluster();
+        FargateService authService = createFargateService(
+                "AuthService",
+                "auth-service",
+                List.of(4005),
+                authServiceDB,
+                Map.of(
+                        "JWT_SECRET", "LDKFWILFN2OI43RLKRN2L3RN2L3RN2LK3RL2K3RN2KL3RN"
+                ));
+        authService.getNode().addDependency(authServiceDBHealthCheck);
+        authService.getNode().addDependency(authServiceDB);
 
+        FargateService billingService = createFargateService(
+                "BillingService",
+                "billing-service",
+                List.of(4001),
+                null,
+                null
+        );
+
+        FargateService analyticsService = createFargateService(
+                "AnalyticsService",
+                "analytics-service",
+                List.of(4002),
+                null,
+                null
+        );
+
+        analyticsService.getNode().addDependency(mskCluster);
+
+        FargateService patientService = createFargateService(
+                "PatientService",
+                "patient-service",
+                List.of(4000),
+                patientServiceDB,
+                Map.of(
+                        "BILLING_SERVICE_ADDRESS", "host.docker.internal",
+                        "BILLING_SERVICE_GRPC_PORT","9001"
+                ));
+        patientService.getNode().addDependency(patientServiceDBHealthCheck);
+        patientService.getNode().addDependency(billingService);
+        patientService.getNode().addDependency(mskCluster);
     }
 
     public static void main(String[] args) {
@@ -96,4 +145,81 @@ public class LocalStack extends Stack {
                 .build();
     }
 
+    private Cluster createEcsCluster() {
+        return Cluster.Builder
+                .create(this, "PatientManagementEcsCluster")
+                .vpc(vpc)
+                .defaultCloudMapNamespace(CloudMapNamespaceOptions.builder()
+                        .name("patient-management.local")
+                        .build())
+                .clusterName("EcsCluster")
+                .build();
+    }
+
+    private FargateService createFargateService(
+            String id,
+            String imageName,
+            List<Integer> ports,
+            DatabaseInstance db,
+            Map<String, String> additionalEnvVars) {
+        FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
+                .create(this, id + "Task")
+                .memoryLimitMiB(512)
+                .cpu(256)
+                .build();
+
+        ContainerDefinitionOptions.Builder containerDefinitionOptionsBuilder =
+                ContainerDefinitionOptions.builder()
+                        .image(ContainerImage.fromRegistry(imageName))
+                        .portMappings(ports.stream()
+                                .map(port ->
+                                        PortMapping.builder()
+                                                .containerPort(port)
+                                                .hostPort(port)
+                                                .protocol(Protocol.TCP)
+                                                .build())
+                                .toList())
+                        .logging(LogDriver.awsLogs(AwsLogDriverProps
+                                .builder()
+                                .logGroup(LogGroup.Builder
+                                        .create(this, id + "LogGroup")
+                                        .logGroupName("/ecs/ " + imageName)
+                                        .removalPolicy(RemovalPolicy.DESTROY)
+                                        .retention(RetentionDays.ONE_DAY)
+                                        .build())
+                                        .streamPrefix(imageName)
+                                .build()));
+        Map<String, String> envVars = new HashMap<>();
+        envVars.put("SPRING_KAFKA_BOOTSTRAP_SERVERS",
+                "localhost.localstack.cloud:4510, " +
+                        "localhost.localstack.cloud:4511" +
+                        ", localhost.localstack.cloud:4512");
+        if (additionalEnvVars != null) {
+            envVars.putAll(additionalEnvVars);
+        }
+        if (db != null) {
+            envVars.put("SPRING_DATASOURCE_URL",
+                    "jdbc:postgresql:%s:%s/%s-db".formatted(
+                            db.getDbInstanceEndpointAddress(),
+                            db.getDbInstanceEndpointPort(),
+                            imageName
+                    ));
+            envVars.put("SPRING-DATASOURCE_USERNAME", "admin_user");
+            envVars.put("SPRING-DATASOURCE_PASSWORD",
+                    db.getSecret().secretValueFromJson("password").toString());
+            envVars.put("SPRING_JPA_HIBERNATE_DDL-AUTO", "update");
+            envVars.put("SPRING_SQL_INIT_MODE", "always");
+            envVars.put("SPRING_DATASOURCE_HIKARI_TIMEOUT", "60000");
+        }
+        containerDefinitionOptionsBuilder.environment(envVars);
+        taskDefinition.addContainer(id + " Container",
+                containerDefinitionOptionsBuilder.build());
+        return FargateService.Builder
+                .create(this, id + "Service")
+                .cluster(ecsCluster)
+                .taskDefinition(taskDefinition)
+                .assignPublicIp(false)
+                .serviceName(imageName)
+                .build();
+    }
 }
