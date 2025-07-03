@@ -5,6 +5,7 @@ import software.amazon.awscdk.services.ec2.*;
 import software.amazon.awscdk.services.ec2.InstanceType;
 import software.amazon.awscdk.services.ecs.*;
 import software.amazon.awscdk.services.ecs.Protocol;
+import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedFargateService;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.msk.CfnCluster;
@@ -40,14 +41,14 @@ public class LocalStack extends Stack {
                 ));
         authService.getNode().addDependency(authServiceDBHealthCheck);
         authService.getNode().addDependency(authServiceDB);
-
-        FargateService billingService = createFargateService(
-                "BillingService",
-                "billing-service",
-                List.of(4001),
-                null,
-                null
-        );
+//
+//        FargateService billingService = createFargateService(
+//                "BillingService",
+//                "billing-service",
+//                List.of(4001),
+//                null,
+//                null
+//        );
 
         FargateService analyticsService = createFargateService(
                 "AnalyticsService",
@@ -66,11 +67,13 @@ public class LocalStack extends Stack {
                 patientServiceDB,
                 Map.of(
                         "BILLING_SERVICE_ADDRESS", "host.docker.internal",
-                        "BILLING_SERVICE_GRPC_PORT","9001"
+                        "BILLING_SERVICE_GRPC_PORT", "9001"
                 ));
         patientService.getNode().addDependency(patientServiceDBHealthCheck);
-        patientService.getNode().addDependency(billingService);
+//        patientService.getNode().addDependency(billingService);
         patientService.getNode().addDependency(mskCluster);
+
+        createApiGatewayService();
     }
 
     public static void main(String[] args) {
@@ -132,7 +135,7 @@ public class LocalStack extends Stack {
                 .create(this, "MskCluster")
                 .clusterName("kafka-cluster")
                 .kafkaVersion("2.8.0")
-                .numberOfBrokerNodes(1)
+                .numberOfBrokerNodes(2)
                 .brokerNodeGroupInfo(CfnCluster.BrokerNodeGroupInfoProperty.builder()
                         .instanceType("kafka.m5.xlarge")
                         .clientSubnets(
@@ -187,7 +190,7 @@ public class LocalStack extends Stack {
                                         .removalPolicy(RemovalPolicy.DESTROY)
                                         .retention(RetentionDays.ONE_DAY)
                                         .build())
-                                        .streamPrefix(imageName)
+                                .streamPrefix(imageName)
                                 .build()));
         Map<String, String> envVars = new HashMap<>();
         envVars.put("SPRING_KAFKA_BOOTSTRAP_SERVERS",
@@ -212,7 +215,7 @@ public class LocalStack extends Stack {
             envVars.put("SPRING_DATASOURCE_HIKARI_TIMEOUT", "60000");
         }
         containerDefinitionOptionsBuilder.environment(envVars);
-        taskDefinition.addContainer(id + " Container",
+        taskDefinition.addContainer(id + "Container",
                 containerDefinitionOptionsBuilder.build());
         return FargateService.Builder
                 .create(this, id + "Service")
@@ -221,5 +224,52 @@ public class LocalStack extends Stack {
                 .assignPublicIp(false)
                 .serviceName(imageName)
                 .build();
+    }
+
+
+    private void createApiGatewayService() {
+        FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
+                .create(this, "ApiGatewayTaskDefinition")
+                .memoryLimitMiB(512)
+                .cpu(256)
+                .build();
+
+        ContainerDefinitionOptions containerOptions =
+                ContainerDefinitionOptions.builder()
+                        .image(ContainerImage.fromRegistry("api-gateway"))
+                        .environment(Map.of(
+                                "SPRING_PROFILES_ACTIVE","prod",
+                                "AUTH_SERVICE_URL","http://host.docker.internal:4005"
+                        ))
+                        .portMappings(List.of(4004).stream()
+                                .map(port ->
+                                        PortMapping.builder()
+                                                .containerPort(port)
+                                                .hostPort(port)
+                                                .protocol(Protocol.TCP)
+                                                .build())
+                                .toList())
+                        .logging(LogDriver.awsLogs(AwsLogDriverProps
+                                .builder()
+                                .logGroup(LogGroup.Builder
+                                        .create(this, "ApiGatewayLogGroup")
+                                        .logGroupName("/ecs/api-gateway")
+                                        .removalPolicy(RemovalPolicy.DESTROY)
+                                        .retention(RetentionDays.ONE_DAY)
+                                        .build())
+                                .streamPrefix("api-gateway")
+                                .build()))
+                        .build();
+        taskDefinition.addContainer("APIGatewayContainer", containerOptions);
+        ApplicationLoadBalancedFargateService apiGateway =
+                ApplicationLoadBalancedFargateService.Builder
+                        .create(this,"APIGatewayService")
+                        .cluster(ecsCluster)
+                        .taskDefinition(taskDefinition)
+                        .serviceName("api-gateway")
+                        .desiredCount(1)
+                        .healthCheckGracePeriod(Duration.seconds(60))
+                        .build();
+
     }
 }
