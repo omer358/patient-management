@@ -85,7 +85,87 @@ Under `integration-tests` module:
 
 ## 🐳 Running the Project
 
-> Prerequisites: Docker + Docker Compose, Java 17
+### Prerequisites
 
-1. Clone the repository
-2. Start the services:
+* Docker Desktop 4.x+ and Docker Compose v2
+* Java Development Kit (JDK) 17
+* Maven 3.8+
+* Git
+* At least 8GB RAM available for containers
+* Ports 4000-4005, 5001, 9092 free on your machine
+
+### Configuration Setup
+
+1. Clone the repository:
+   ```bash
+    git clone https://github.com/yourusername/patient-management.git
+    cd patient-management
+   ```
+2. Copy environment files:
+   ```bash
+    cp .env.example .env
+   ```
+3. Build all services:
+   ```bash
+    mvn clean package -DskipTests
+   ```
+
+### 🚀 Starting Services
+
+1. **Build all services (if not already built):**
+
+   ```bash
+    docker compose build
+   ```
+
+2. **Start all services:**
+
+   ```bash
+    docker compose up -d
+   ```
+
+   This will start:
+
+    * PostgreSQL for `auth-service` and `patient-service`.
+    * Kafka.
+    * All microservices (`auth-service`, `patient-service`, `billing-service`, `analytices-service`, `api-gateway`).
+
+3. **(Optional) Start services individually for focused debugging:**
+
+```bash
+   docker compose up -d auth-service-db patient-service-db kafka
+   docker compose up -d auth-service
+   docker compose up -d patient-service
+   docker compose up -d billing-service
+   docker compose up -d analytices-service
+   docker compose up -d api-gateway
+  ```
+
+---
+
+### ✅ Verify Services Are Running
+
+To verify containers are up:
+
+```bash
+  docker compose ps
+```
+
+Expected ports:
+
+| Service              | Port        | Notes                    |
+| -------------------- | ----------- | ------------------------ |
+| PostgreSQL (auth)    | 5001        | `auth-service-db`        |
+| PostgreSQL (patient) | 5000        | `patient-service-db`     |
+| Kafka                | 9092        | Internal use only        |
+| API Gateway          | 4004        | Entry point to system    |
+| Auth Service         | 4005        | Login / Token validation |
+| Patient Service      | 4000        | Patient management       |
+| Billing Service      | 4001 / 9001 | gRPC + HTTP (if any)     |
+| Analytics Service    | 4002        | Kafka consumer           |
+
+You can also verify individual services by hitting their Swagger docs:
+
+```
+http://localhost:4004/api-docs/patients
+```
