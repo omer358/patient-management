@@ -101,11 +101,8 @@ Under `integration-tests` module:
     git clone https://github.com/yourusername/patient-management.git
     cd patient-management
    ```
-2. Copy environment files:
-   ```bash
-    cp .env.example .env
-   ```
-3. Build all services:
+   
+2. Build all services:
    ```bash
     mvn clean package -DskipTests
    ```
@@ -169,3 +166,10 @@ You can also verify individual services by hitting their Swagger docs:
 ```
 http://localhost:4004/api-docs/patients
 ```
+
+## 🔄 CI/CD (Planned)
+
+This project is designed to be CI/CD ready using GitHub Actions. Future enhancements include:
+- Test and lint on push.
+- Docker image build and push.
+- Deployment.
