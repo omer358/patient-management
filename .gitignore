@@ -1,2 +1,12 @@
 /infrastructure/cdk.out/
 /infrastructure/target/
+/api-gateway/target/maven-archiver/pom.properties
+/api-gateway/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+/api-gateway/HELP.md
+/.idea/runConfigurations/docker_compose.xml
+/api-gateway/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
+/api-gateway/target/api-gateway-0.0.1-SNAPSHOT.jar
+/api-gateway/target/api-gateway-0.0.1-SNAPSHOT.jar.original
+/api-gateway/target/classes/org/pm/apigateway/ApiGatewayApplication.class
+/api-gateway/target/classes/application.yml
+/api-gateway/target/classes/application-prod.yml
