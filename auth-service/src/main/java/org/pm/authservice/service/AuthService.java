@@ -3,10 +3,11 @@ package org.pm.authservice.service;
 import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.pm.authservice.dto.LoginRequestDto;
-import org.pm.authservice.util.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -14,29 +15,43 @@ import java.util.Optional;
 public class AuthService {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtl;
+    private final JwtService jwtService;
 
-    public AuthService(UserService userService, PasswordEncoder passwordEncoder, JwtUtil jwtUtl) {
+    public AuthService(UserService userService, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
-        this.jwtUtl = jwtUtl;
+        this.jwtService = jwtService;
     }
 
     public Optional<String> authenticate(LoginRequestDto loginRequestDto) {
-        Optional<String> token = userService.findByEmail(loginRequestDto.getEmail())
+        return userService.findByEmail(loginRequestDto.getEmail())
                 .filter(user ->
                         passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword()))
-                .map(u -> jwtUtl.generateToken(u.getEmail(),u.getRole().toString()));
-     return token;
+                .map(jwtService::generateToken);
     }
 
-    public boolean validateToken(String token) {
-        try{
-            jwtUtl.validateToken(token);
-            return true;
-        }catch (JwtException e){
+    public boolean isTokenValid(String token) {
+        try {
+            String email = jwtService.extractUsername(token);
+            return userService.findByEmail(email)
+                    .map(user -> jwtService.isTokenValid(token, user))
+                    .orElse(false);
+        } catch (JwtException e) {
+            // I gue3ss  I shlo
             log.error("Invalid token: {}", e.getMessage());
             return false;
+        }
+    }
+    public Optional<Map<String, Object>> extractClaims(String token) {
+        try {
+            Map<String, Object> claims = new HashMap<>();
+            claims.put("email", jwtService.extractUsername(token));
+            claims.put("role", jwtService.extractClaim(token, claim ->claim.get("role", String.class)));
+            claims.put("expiration", jwtService.extractExpiration(token));
+            return Optional.of(claims);
+        } catch (JwtException e) {
+            log.error("Failed to extract claims: {}", e.getMessage());
+            return Optional.empty();
         }
     }
 }
