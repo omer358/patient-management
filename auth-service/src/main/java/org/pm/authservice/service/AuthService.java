@@ -37,8 +37,8 @@ public class AuthService {
                     .map(user -> jwtService.isTokenValid(token, user))
                     .orElse(false);
         } catch (JwtException e) {
-            // I gue3ss  I shlo
-            log.error("Invalid token: {}", e.getMessage());
+            log.debug("Invalid token provided: {}", e.getMessage());
+            log.error("Invalid token provided");
             return false;
         }
     }
