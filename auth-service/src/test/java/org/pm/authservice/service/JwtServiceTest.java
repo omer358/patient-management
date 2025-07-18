@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JwtServiceTest {
 
-    private static final String SECRET_KEY = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+    private static final String SECRET_KEY = "BZiIguPNb9xsyuSsuYiFFk+zBp8HCQlP3mZy3XSk3E4=";
     private static final long EXPIRATION_MILLIS = 3600000; // 1 hour
     private static final Instant FIXED_TIME = java.time.ZonedDateTime
             .now()
