@@ -10,3 +10,4 @@
 /api-gateway/target/classes/org/pm/apigateway/ApiGatewayApplication.class
 /api-gateway/target/classes/application.yml
 /api-gateway/target/classes/application-prod.yml
+/auth-service/.env
